@@ -1,0 +1,145 @@
+---
+title: "PCA"
+author: "Pumla"
+date: "2024-06-26"
+output: html_document
+---
+
+#Setting up environment 
+#Clean environment
+```{r}
+rm(list = ls(all.names = TRUE)) 
+gc() 
+options(max.print = .Machine$integer.max, scipen = 999, stringsAsFactors = F, dplyr.summarise.inform = F)
+```
+
+
+#Load libraries
+```{r}
+library(dplyr)
+library(ggplot2)
+library(RColorBrewer)
+library(pheatmap)
+```
+
+#Set the working directory
+```{r}
+setwd("~/starmm/pca")
+```
+
+
+```{r}
+fpkm_data <- read.csv("FPKM.csv", header = TRUE, stringsAsFactors = FALSE)
+```
+
+
+#Read design.csv containing SampleID and Treatment
+```{r}
+design_data <- read.csv("Designpca.csv", header = TRUE, stringsAsFactors = FALSE)
+```
+
+
+#View the contents of fpkm_data
+```{r}
+View(fpkm_data)
+```
+
+
+#View the contents of design_data
+```{r}
+View(design_data)
+```
+
+
+#Display the structure of fpkm_data
+```{r}
+str(fpkm_data)
+```
+
+
+#Display the first few rows of fpkm_data
+```{r}
+head(fpkm_data)
+```
+
+
+#Display the structure of design_data
+```{r}
+str(design_data)
+```
+
+
+#Extract numeric data for PCA (assuming columns 2 to end are numeric)
+```{r}
+fpkm_numeric <- fpkm_data[, -1]
+```
+
+
+#Log2 transformation
+```{r}
+fpkm_log <- log2(fpkm_numeric + 1)
+```
+
+
+#Transpose data for PCA (assuming rows are samples and columns are features)
+```{r}
+fpkm_log_t <- t(fpkm_log)
+```
+
+
+#Perform PCA
+```{r}
+pca_result <- prcomp(fpkm_log_t, center = TRUE, scale. = FALSE)
+```
+
+
+#Extract PCA scores
+```{r}
+pc_scores <- as.data.frame(pca_result$x)
+```
+
+
+#Add Treatment information to PCA scores based on SampleID
+```{r}
+pc_scores$SampleID <- rownames(pc_scores)
+pc_scores_with_treatment <- merge(pc_scores, design_data, by = "SampleID")
+```
+
+
+#Create PCA plot
+```{r}
+p <- ggplot(pc_scores_with_treatment, aes(x = PC1, y = PC2, color = Treatment, label = SampleID)) +
+  geom_point(size = 2) +
+  geom_text(size = 3, hjust = -0.2, vjust = 0, color = "black") +
+  scale_color_manual(values = c("healthy" = "#1f78b4", "treated" = "#b2df8a")) +
+  labs(x = paste("PC1 (", round(summary(pca_result)$importance[2, 1] * 100, 2), "%)"),
+       y = paste("PC2 (", round(summary(pca_result)$importance[2, 2] * 100, 2), "%)"),
+       color = "Treatment") +
+  theme_minimal()
+```
+
+
+#Display the plot
+```{r}
+print(p)
+```
+
+
+#to remove print 
+```{r}
+ggplot(pc_scores_with_treatment, aes(x = PC1, y = PC2, color = Treatment, label = SampleID)) +
+  geom_point(size = 4) +
+  geom_text(size = 3, hjust = -0.2, vjust = 0, color = "black") +
+  scale_color_manual(values = c("healthy" = "#1f78b4", "treated" = "#b2df8a")) +
+  labs(x = paste("PC1 (", round(summary(pca_result)$importance[2, 1] * 100, 2), "%)"),
+       y = paste("PC2 (", round(summary(pca_result)$importance[2, 2] * 100, 2), "%)"),
+       color = "Treatment") +
+  theme_minimal()
+```
+
+
+
+
+
+
+
